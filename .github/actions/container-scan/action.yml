@@ -1,0 +1,42 @@
+name: "Container Image Vulnerability Scan (Trivy)"
+description: "Scan built container images for OS package vulnerabilities, language packages, and CVEs"
+
+inputs:
+  image_ref:
+    description: "Container image reference to scan"
+    required: true
+  severity:
+    description: "Severities to detect (CRITICAL,HIGH)"
+    required: false
+    default: "CRITICAL,HIGH"
+  exit_code:
+    description: "Exit code on failure (0 = warn, 1 = fail)"
+    required: false
+    default: "0"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Trivy Image Scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ inputs.image_ref }}
+        format: "sarif"
+        output: "trivy-image-results.sarif"
+        severity: ${{ inputs.severity }}
+        exit-code: ${{ inputs.exit_code }}
+        trivyignores: ".trivyignore"
+
+    - name: Upload Container SARIF to GitHub Security Tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: "trivy-image-results.sarif"
+        category: trivy-container
+      continue-on-error: true
+
+    - name: Record Container Scan Status
+      shell: bash
+      run: |
+        echo "### 🐳 Container Vulnerability Scan: COMPLETED" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image:** \`${{ inputs.image_ref }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Policy:** Scanned against National Vulnerability Database (NVD)" >> $GITHUB_STEP_SUMMARY
