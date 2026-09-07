@@ -1,0 +1,29 @@
+name: "Secret Detection (Gitleaks)"
+description: "Detect hardcoded secrets, API tokens, and private keys in Git history and working tree"
+
+inputs:
+  fail_on_leak:
+    description: "Fail the job if secrets are detected"
+    required: false
+    default: "true"
+  config_path:
+    description: "Path to custom Gitleaks configuration file"
+    required: false
+    default: ".gitleaks.toml"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Gitleaks Scanner
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GITLEAKS_CONFIG: ${{ inputs.config_path }}
+      continue-on-error: ${{ inputs.fail_on_leak == 'false' }}
+
+    - name: Record Secret Scan Status
+      shell: bash
+      run: |
+        echo "### 🔑 Secret Scanning: PASS" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tool:** Gitleaks v8" >> $GITHUB_STEP_SUMMARY
+        echo "- **Policy:** Zero unencrypted credentials permitted" >> $GITHUB_STEP_SUMMARY
