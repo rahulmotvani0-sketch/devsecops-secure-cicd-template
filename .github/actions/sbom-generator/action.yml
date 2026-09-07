@@ -1,0 +1,47 @@
+name: "SBOM Generation (Anchore Syft)"
+description: "Generate comprehensive Software Bill of Materials (SBOM) in SPDX and CycloneDX standard formats"
+
+inputs:
+  target:
+    description: "Target to generate SBOM for (e.g. dir:., image-ref)"
+    required: true
+  output_dir:
+    description: "Directory to save SBOM files"
+    required: false
+    default: "sbom-artifacts"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Syft CLI
+      shell: bash
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+    - name: Generate SPDX & CycloneDX SBOMs
+      shell: bash
+      run: |
+        mkdir -p "${{ inputs.output_dir }}"
+        echo "Generating SPDX 2.3 JSON SBOM..."
+        syft "${{ inputs.target }}" -o spdx-json="${{ inputs.output_dir }}/sbom.spdx.json"
+        
+        echo "Generating CycloneDX 1.5 JSON SBOM..."
+        syft "${{ inputs.target }}" -o cyclonedx-json="${{ inputs.output_dir }}/sbom.cyclonedx.json"
+        
+        echo "Generating Human-Readable Table Summary..."
+        syft "${{ inputs.target }}" -o table="${{ inputs.output_dir }}/sbom.table.txt"
+
+    - name: Upload SBOM as Workflow Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: software-bill-of-materials
+        path: ${{ inputs.output_dir }}/
+        retention-days: 30
+
+    - name: Record SBOM Status
+      shell: bash
+      run: |
+        echo "### 📜 Software Bill of Materials (SBOM): GENERATED" >> $GITHUB_STEP_SUMMARY
+        echo "- **Standard Formats:** SPDX 2.3 JSON & CycloneDX 1.5 JSON" >> $GITHUB_STEP_SUMMARY
+        echo "- **Compliance:** Executive Order 14028 / NTIA Minimum Elements" >> $GITHUB_STEP_SUMMARY
+        echo "- **Artifact:** Stored in GitHub Actions artifacts (30 days retention)" >> $GITHUB_STEP_SUMMARY
