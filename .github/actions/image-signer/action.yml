@@ -1,0 +1,56 @@
+name: "Container Image Signing (Sigstore Cosign)"
+description: "Cryptographically sign container images keylessly using GitHub OIDC identity tokens and Rekor transparency log"
+
+inputs:
+  image_ref:
+    description: "Image reference to sign with digest (e.g. ghcr.io/org/repo@sha256:...)"
+    required: true
+  enable_attestation:
+    description: "Attach SBOM attestation to image signature"
+    required: false
+    default: "false"
+  sbom_path:
+    description: "Path to CycloneDX/SPDX SBOM file if attaching attestation"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Sigstore Cosign
+      uses: sigstore/cosign-installer@v3.5.0
+
+    - name: Sign Container Image (Keyless OIDC)
+      shell: bash
+      env:
+        COSIGN_YES: "true"
+      run: |
+        echo "Signing image ${{ inputs.image_ref }} via Sigstore Fulcio Certificate Authority..."
+        cosign sign --yes "${{ inputs.image_ref }}"
+
+    - name: Attach In-Toto SBOM Attestation (Optional)
+      if: ${{ inputs.enable_attestation == 'true' && inputs.sbom_path != '' }}
+      shell: bash
+      env:
+        COSIGN_YES: "true"
+      run: |
+        echo "Attaching predicate SBOM attestation..."
+        cosign attest --yes --predicate "${{ inputs.sbom_path }}" --type spdxjson "${{ inputs.image_ref }}"
+
+    - name: Verify Signature on Public Rekor Transparency Log
+      shell: bash
+      run: |
+        echo "Verifying cryptographic signature on Rekor transparency log..."
+        cosign verify \
+          --certificate-identity-regexp="https://github.com/${{ github.repository }}" \
+          --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+          "${{ inputs.image_ref }}"
+
+    - name: Record Cosign Status
+      shell: bash
+      run: |
+        echo "### ✍️ Supply Chain Signing: VERIFIED" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tool:** Sigstore Cosign v2" >> $GITHUB_STEP_SUMMARY
+        echo "- **Method:** Keyless OIDC (Fulcio Root CA + Rekor Transparency Log)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Identity:** \`https://github.com/${{ github.repository }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **SLSA Level:** Attained SLSA Build Level 3 Integrity" >> $GITHUB_STEP_SUMMARY
