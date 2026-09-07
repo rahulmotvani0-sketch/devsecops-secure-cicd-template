@@ -1,0 +1,45 @@
+name: "Software Composition Analysis (Trivy SCA)"
+description: "Audit third-party dependencies, open-source libraries, and licenses against CVE databases"
+
+inputs:
+  scan_type:
+    description: "Scan target type: fs or repo"
+    required: false
+    default: "fs"
+  severity:
+    description: "Severities to report (CRITICAL,HIGH,MEDIUM,LOW)"
+    required: false
+    default: "CRITICAL,HIGH"
+  exit_code:
+    description: "Exit code when vulnerabilities found (0 = warn, 1 = fail)"
+    required: false
+    default: "0"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Trivy Dependency Vulnerability Scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: ${{ inputs.scan_type }}
+        scan-ref: "."
+        format: "sarif"
+        output: "trivy-sca-results.sarif"
+        severity: ${{ inputs.severity }}
+        exit-code: ${{ inputs.exit_code }}
+        trivyignores: ".trivyignore"
+
+    - name: Upload SCA SARIF to GitHub Security Tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: "trivy-sca-results.sarif"
+        category: trivy-sca
+      continue-on-error: true
+
+    - name: Record SCA Status
+      shell: bash
+      run: |
+        echo "### 📦 Dependency SCA Audit: COMPLETED" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tool:** Aqua Trivy" >> $GITHUB_STEP_SUMMARY
+        echo "- **Severities Monitored:** ${{ inputs.severity }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Trivyignore Policy:** Documented in .trivyignore" >> $GITHUB_STEP_SUMMARY
