@@ -1,0 +1,25 @@
+# Gitleaks Configuration & Secret Detection Rules
+# Reference: https://github.com/gitleaks/gitleaks
+
+title = "Enterprise DevSecOps Secret Scanning Policy"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlists for documented fixtures and mock values"
+paths = [
+  '''test-fixtures/vulnerable-samples/.*''',
+  '''tests/.*mock.*''',
+  '''\.gitleaks\.toml$''',
+  '''README\.md$'''
+]
+regexes = [
+  '''(?i)mock[-_]?token''',
+  '''(?i)dummy[-_]?key''',
+  '''(?i)example[-_]?secret'''
+]
+stopwords = [
+  "EXAMPLE_KEY",
+  "DUMMY_TOKEN"
+]

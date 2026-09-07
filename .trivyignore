@@ -1,0 +1,14 @@
+# Trivy CVE Ignore Policy
+# Purpose: Suppress accepted false positives and known low-risk CVEs with documented compensating controls.
+# Policy: Every exception MUST include CVE ID, package, justification, and review date.
+
+# CVE-2023-45853: zlib buffer overflow in minizip
+# Justification: minizip contrib library is not linked or invoked in Python runtime execution path.
+# Compensating Control: Distroless non-root runtime prevents shell execution.
+# Review Date: 2026-12-31
+CVE-2023-45853
+
+# CVE-2024-24790: Go net/netip unexpected behavior with IPv4-mapped IPv6
+# Justification: Upstream base image patch pending; ingress gateway enforces IPv4 canonicalization.
+# Review Date: 2026-12-31
+CVE-2024-24790

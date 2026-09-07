@@ -1,0 +1,24 @@
+# Checkov Policy Configuration
+# Reference: https://www.checkov.io/2.Basics/Configuring%20Checkov.html
+
+framework:
+  - terraform
+  - dockerfile
+  - kubernetes
+
+output:
+  - cli
+  - sarif
+
+output-file-path:
+  - console
+  - results.sarif
+
+soft-fail: false
+download-external-modules: false
+compact: true
+
+# Skip low-impact checks with documented architectural justifications
+skip-check:
+  # CKV_DOCKER_2: Healthcheck instructions are delegated to Kubernetes liveness/readiness probes
+  - CKV_DOCKER_2
