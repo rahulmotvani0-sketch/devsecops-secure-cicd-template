@@ -1,0 +1,39 @@
+name: "Infrastructure as Code Security (Checkov)"
+description: "Scan Terraform, Kubernetes manifests, and Dockerfiles for misconfigurations and security drift"
+
+inputs:
+  directory:
+    description: "Directory containing IaC files"
+    required: false
+    default: "."
+  soft_fail:
+    description: "Whether to soft fail (log warnings without halting CI)"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Checkov IaC Scanner
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: ${{ inputs.directory }}
+        framework: terraform,dockerfile,kubernetes
+        output_format: cli,sarif
+        output_file_path: console,results/checkov.sarif
+        soft_fail: ${{ inputs.soft_fail }}
+        config_file: ".checkov.yaml"
+
+    - name: Upload IaC SARIF to GitHub Security Tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: results/checkov.sarif
+        category: checkov-iac
+      continue-on-error: true
+
+    - name: Record IaC Status
+      shell: bash
+      run: |
+        echo "### 🏗️ IaC Security Analysis: COMPLETED" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tool:** Checkov (Palo Alto Networks / Bridgecrew)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Frameworks:** Terraform, Dockerfile, Kubernetes" >> $GITHUB_STEP_SUMMARY
