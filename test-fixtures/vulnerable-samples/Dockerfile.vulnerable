@@ -1,0 +1,29 @@
+# ==============================================================================
+# TEST FIXTURE: Deliberately Misconfigured Dockerfile
+# FOR DEMONSTRATION AND CHECKOV/TRIVY VERIFICATION ONLY
+# ==============================================================================
+
+# VULNERABILITY 1: Unpinned base image tag
+# CHECKOV RULE: CKV_DOCKER_7: Ensure the base image uses a specific digest or pinned version
+FROM python:latest
+
+WORKDIR /app
+
+# VULNERABILITY 2: Hardcoded environment secret in image layer
+# CHECKOV RULE: CKV_DOCKER_8: Ensure secrets are not stored in Dockerfile ENV instructions
+ENV AWS_SECRET_KEY="SAMPLE_MOCK_AWS_ACCESS_KEY_NOT_REAL"
+ENV DATABASE_PASSWORD="plaintext_root_password"
+
+# VULNERABILITY 3: Insecure package manager usage and missing cache cleanup
+RUN apt-get update && apt-get install -y curl
+
+COPY . /app
+
+# VULNERABILITY 4: Missing USER directive (Container runs as root!)
+# CHECKOV RULE: CKV_DOCKER_3: Ensure that a user for the container has been created
+# CIS DOCKER BENCHMARK: 4.1 Create a user for the container
+# If exploited, attacker gains root privileges inside container namespace!
+
+EXPOSE 8080
+
+CMD ["python", "app.py"]
