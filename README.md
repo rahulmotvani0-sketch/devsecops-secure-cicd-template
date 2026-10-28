@@ -139,7 +139,7 @@ Upon every CI run, the workflow renders a consolidated executive summary table d
 
 ## 🔧 Tuned Policies & False-Positive Elimination
 
-Rather than using naive out-of-the-box scanner configurations that spam developers with thousands of unfixable alerts, this repository models **senior DevSecOps standard-setting**:
+Rather than using naive out-of-the-box scanner configurations that spam developers with thousands of unfixable alerts, this repository models **production DevSecOps standard-setting**:
 
 1. **[`.gitleaks.toml`](.gitleaks.toml):**
    * Preconfigured allowlists for verified test fixtures, mock data, and documentation examples.
@@ -200,7 +200,7 @@ make demo-pass     # Scans hardened microservice (demonstrates clean pass)
 
 ## 🎤 Interview Deep-Dive & Architecture Trade-offs
 
-When presenting this project in a senior DevOps / DevSecOps interview (e.g. micro1):
+When presenting this project in a DevOps / DevSecOps interview:
 
 ### 1. Shift-Left Philosophy: Fail Fast vs. Developer Productivity
 * **Question:** *"How do you balance pipeline security gates without blocking developer velocity?"*
